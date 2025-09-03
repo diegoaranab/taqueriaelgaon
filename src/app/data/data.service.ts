@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { DOCUMENT } from '@angular/common';
+import { Observable, of, catchError } from 'rxjs';
 
 export interface TacoItem { name: string; prices: { maiz: number; harina: number; con: number }; }
 export interface SimpleItem { name: string; price: number; }
@@ -26,16 +27,34 @@ export interface Business {
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private http = inject(HttpClient);
-  private base = '/data'; // served from /public/data
+  private doc = inject(DOCUMENT);
+
+  /**
+   * Build a URL under the app's <base href>, e.g. '/taqueriaelgaon/data/...'
+   * Works in browser and during Angular prerender.
+   */
+  private url(file: string): string {
+    // baseURI is provided by platform-browser and platform-server
+    const base = (this.doc as Document).baseURI || '/';
+    return new URL(`data/${file}`, base).toString();
+  }
 
   menu(): Observable<MenuData> {
-    return this.http.get<MenuData>(`${this.base}/menu.json`);
+    return this.http.get<MenuData>(this.url('menu.json')).pipe(
+      catchError(() => of({ categories: [] }))
+    );
   }
+
   promos(): Observable<PromosData> {
-    return this.http.get<PromosData>(`${this.base}/promos.json`);
+    return this.http.get<PromosData>(this.url('promos.json')).pipe(
+      catchError(() => of({ active: [] }))
+    );
   }
+
   business(): Observable<Business> {
-    return this.http.get<Business>(`${this.base}/business.json`);
+    return this.http.get<Business>(this.url('business.json')).pipe(
+      catchError(() => of({ name: 'Taquería El Ga’on' } as Business))
+    );
   }
 
   whatsappUrl(message: string, biz?: Business): string {
