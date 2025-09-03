@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="950" height="534" viewBox="0 0 950 534" xmlns="http://www.w3.org/2000/svg">
+  <rect width="950" height="534" fill="#0B0B0B"/>
+  <g transform="translate(0,0)">
+    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+          font-family="Poppins, Arial, sans-serif"
+          font-size="48" fill="#D8B63C" letter-spacing="2">
+      Taquería El Ga’on
+    </text>
+    <text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle"
+          font-family="Poppins, Arial, sans-serif"
+          font-size="18" fill="rgba(255,255,255,0.75)">
+      #TacosDeAdeveras · Tehuacán, Puebla
+    </text>
+  </g>
+</svg>
