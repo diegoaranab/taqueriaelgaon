@@ -1,0 +1,37 @@
+{
+  "categories": [
+    {
+      "id": "tacos",
+      "label": "Tacos",
+      "items": [
+        { "name": "Arrachera", "prices": { "maiz": 42, "harina": 46, "con": 52 } },
+        { "name": "Sirloin",   "prices": { "maiz": 45, "harina": 49, "con": 55 } },
+        { "name": "New York",  "prices": { "maiz": 45, "harina": 49, "con": 55 } },
+        { "name": "Picanha",   "prices": { "maiz": 45, "harina": 49, "con": 55 } },
+        { "name": "Rib Eye",   "prices": { "maiz": 42, "harina": 46, "con": 52 } },
+        { "name": "Pechuga",   "prices": { "maiz": 42, "harina": 46, "con": 52 } },
+        { "name": "Cecina",    "prices": { "maiz": 42, "harina": 46, "con": 52 } },
+        { "name": "Chuleta",   "prices": { "maiz": 39, "harina": 43, "con": 49 } }
+      ],
+      "notes": "Precios por taco. 'con' = con queso."
+    },
+    {
+      "id": "bebidas",
+      "label": "Fuente de sodas",
+      "items": [
+        { "name": "Jarritos", "price": 35 },
+        { "name": "Sangría casera", "price": 35 },
+        { "name": "Agua natural", "price": 25 },
+        { "name": "Agua del día 1/2 litro", "price": 35 },
+        { "name": "Agua del día 1 litro", "price": 65 }
+      ]
+    },
+    {
+      "id": "postres",
+      "label": "Postres",
+      "items": [
+        { "name": "Postre del día", "price": 50 }
+      ]
+    }
+  ]
+}
