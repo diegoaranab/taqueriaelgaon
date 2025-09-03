@@ -30,18 +30,18 @@ import { DataService, Category, TacoItem } from '../../data/data.service';
         <div class="flex items-center gap-2 text-sm shrink-0">
           <ng-container *ngIf="isTaco(item); else simplePrice">
             <span class="inline-block px-2 py-1 rounded bg-white/10">
-              Maíz {{ (item as TacoItem).prices.maiz | currency:'MXN':'symbol-narrow':'1.0-0' }}
+              Maíz {{ $any(item).prices?.maiz | currency:'MXN':'symbol-narrow':'1.0-0' }}
             </span>
             <span class="inline-block px-2 py-1 rounded bg-white/10">
-              Harina {{ (item as TacoItem).prices.harina | currency:'MXN':'symbol-narrow':'1.0-0' }}
+              Harina {{ $any(item).prices?.harina | currency:'MXN':'symbol-narrow':'1.0-0' }}
             </span>
             <span class="inline-block px-2 py-1 rounded bg-vermillion">
-              Con {{ (item as TacoItem).prices.con | currency:'MXN':'symbol-narrow':'1.0-0' }}
+              Con {{ $any(item).prices?.con | currency:'MXN':'symbol-narrow':'1.0-0' }}
             </span>
           </ng-container>
           <ng-template #simplePrice>
             <span class="inline-block px-2 py-1 rounded bg-white/10">
-              {{ (item as any).price | currency:'MXN':'symbol-narrow':'1.0-0' }}
+              {{ $any(item).price | currency:'MXN':'symbol-narrow':'1.0-0' }}
             </span>
           </ng-template>
         </div>
