@@ -2,7 +2,7 @@ name: Deploy GH Pages
 on:
   push:
     branches: [ main ]
- 
+
 permissions:
   contents: write  # allow actions-gh-pages to push to gh-pages
 
@@ -16,11 +16,29 @@ jobs:
           node-version: '20'
       - run: npm install --no-audit --no-fund
       - run: npm run build
-      - name: Add 404 fallback for SPA deep links
-        run: cp dist/el-gaon/browser/index.html dist/el-gaon/browser/404.html
+
+      # Detect Angular output path:
+      # - If SSR/prerender outputs to dist/el-gaon (no browser/), use that
+      # - Otherwise use legacy dist/el-gaon/browser
+      - name: Resolve publish directory & add 404 fallback
+        shell: bash
+        run: |
+          set -e
+          if [ -d dist/el-gaon/browser ]; then
+            echo "PUBLISH_DIR=dist/el-gaon/browser" >> "$GITHUB_ENV"
+            cp dist/el-gaon/browser/index.html dist/el-gaon/browser/404.html
+          elif [ -d dist/el-gaon ]; then
+            echo "PUBLISH_DIR=dist/el-gaon" >> "$GITHUB_ENV"
+            cp dist/el-gaon/index.html dist/el-gaon/404.html
+          else
+            echo "Build output not found"
+            ls -R dist || true
+            exit 1
+          fi
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist/el-gaon/browser
+          publish_dir: ${{ env.PUBLISH_DIR }}
           force_orphan: true
