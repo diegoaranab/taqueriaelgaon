@@ -1,0 +1,10 @@
+{
+  "name": "Taquería El Ga’on",
+  "address": "2 Poniente #218, Centro, Tehuacán, Puebla",
+  "instagram": "taqueria_elgaon",
+  "facebook": "taqueria_elgaon",
+  "whatsapp": {
+    "number": "",
+    "prefill": "Hola El Ga’on, quiero ordenar:"
+  }
+}
