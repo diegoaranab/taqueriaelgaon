@@ -33,10 +33,10 @@ import { CommonModule } from '@angular/common';
 })
 export class HeroVideoComponent implements AfterViewInit, OnDestroy {
   /** Path to the MP4 video. Replace this with the real Sora export when ready. */
-  @Input() src: string = '/assets/video/hero_loop.mp4';
+  @Input() src: string = 'assets/video/hero_loop.mp4';
 
   /** Poster image shown on load and for reduced-motion users. */
-  @Input() poster: string = '/assets/images/hero/poster.svg';
+  @Input() poster: string = 'assets/images/hero/poster.svg';
 
   @ViewChild('vid') vid?: ElementRef<HTMLVideoElement>;
   prefersReducedMotion = false;
