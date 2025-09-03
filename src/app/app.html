@@ -16,6 +16,32 @@
   <router-outlet />
 </main>
 
-<footer class="bg-blackx text-white/70 text-sm py-6">
-  <div class="mx-auto max-w-6xl px-4">© {{ year }} Taquería El Ga’on</div>
+<footer
+  class="text-white/80 text-sm"
+  style="
+    background:
+      linear-gradient(#111 1px, transparent 1px),
+      linear-gradient(90deg, #111 1px, transparent 1px);
+    background-size: 32px 32px, 32px 32px;
+    background-position: 0 0, 0 0;
+    background-color: #0B0B0B;
+  ">
+  <div class="mx-auto max-w-6xl px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div>
+      <div class="text-gold font-display text-lg mb-2">Taquería El Ga’on</div>
+      <div class="text-white/70">2 Poniente #218, Centro, Tehuacán, Puebla</div>
+    </div>
+    <div>
+      <div class="text-white mb-2">Horarios</div>
+      <div>Lun–Dom · 1:00 pm – 11:00 pm</div>
+    </div>
+    <div>
+      <div class="text-white mb-2">Social</div>
+      <div class="flex gap-4">
+        <a href="https://instagram.com/taqueria_elgaon" target="_blank" rel="noopener" class="hover:text-white">Instagram</a>
+        <a href="https://facebook.com/taqueria_elgaon" target="_blank" rel="noopener" class="hover:text-white">Facebook</a>
+      </div>
+    </div>
+  </div>
+  <div class="mx-auto max-w-6xl px-4 pb-6 text-white/60">© {{ year }} Taquería El Ga’on</div>
 </footer>
