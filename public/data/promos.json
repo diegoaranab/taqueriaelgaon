@@ -1,0 +1,13 @@
+{
+  "active": [
+    {
+      "title": "Bienvenido conocedor ✨",
+      "body": "Pregunta por la gaonera con queso 🧀",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "cta": "Ver menú",
+      "href": "/menu"
+    }
+  ],
+  "upcoming": []
+}
