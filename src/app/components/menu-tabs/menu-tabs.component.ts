@@ -1,11 +1,11 @@
-import { Component, Signal, computed, effect, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { DataService, Category, TacoItem } from '../../data/data.service';
 
 @Component({
   standalone: true,
   selector: 'app-menu-tabs',
-  imports: [CommonModule],
+  imports: [CommonModule, CurrencyPipe],
   template: `
   <section class="bg-blackx text-white px-4 py-8 mx-auto max-w-6xl">
     <h1 class="text-3xl md:text-4xl font-display mb-4">Menú</h1>
@@ -29,15 +29,22 @@ import { DataService, Category, TacoItem } from '../../data/data.service';
           <h3 class="font-semibold text-lg">{{ item.name }}</h3>
         </div>
 
-        <!-- Tacos have three price chips; simples have one -->
         <div class="flex items-center gap-2 text-sm shrink-0">
           <ng-container *ngIf="isTaco(item); else simplePrice">
-            <span class="inline-block px-2 py-1 rounded bg-white/10">Maíz ${{ (item as TacoItem).prices.maiz }}</span>
-            <span class="inline-block px-2 py-1 rounded bg-white/10">Harina ${{ (item as TacoItem).prices.harina }}</span>
-            <span class="inline-block px-2 py-1 rounded bg-vermillion">Con ${{ (item as TacoItem).prices.con }}</span>
+            <span class="inline-block px-2 py-1 rounded bg-white/10">
+              Maíz {{ (item as TacoItem).prices.maiz | currency:'MXN':'symbol-narrow':'1.0-0' }}
+            </span>
+            <span class="inline-block px-2 py-1 rounded bg-white/10">
+              Harina {{ (item as TacoItem).prices.harina | currency:'MXN':'symbol-narrow':'1.0-0' }}
+            </span>
+            <span class="inline-block px-2 py-1 rounded bg-vermillion">
+              Con {{ (item as TacoItem).prices.con | currency:'MXN':'symbol-narrow':'1.0-0' }}
+            </span>
           </ng-container>
           <ng-template #simplePrice>
-            <span class="inline-block px-2 py-1 rounded bg-white/10">${{ (item as any).price }}</span>
+            <span class="inline-block px-2 py-1 rounded bg-white/10">
+              {{ (item as any).price | currency:'MXN':'symbol-narrow':'1.0-0' }}
+            </span>
           </ng-template>
         </div>
       </div>
@@ -60,8 +67,12 @@ export class MenuTabsComponent {
     });
   }
 
-  protected activeCategory = computed(() => this.categories().find(c => c.id === this.activeId()) ?? null);
+  protected activeCategory = computed(() =>
+    this.categories().find(c => c.id === this.activeId()) ?? null
+  );
+
   protected isTaco(item: any): item is TacoItem {
     return !!item?.prices && typeof item.prices.maiz === 'number';
   }
 }
+
