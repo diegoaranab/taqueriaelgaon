@@ -11,6 +11,8 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
+      # Install Tailwind v4 PostCSS bridge to satisfy Tailwind's plugin requirement at build time
+      - run: npm i -D @tailwindcss/postcss
       - run: npm run build
       - name: Add 404 fallback for SPA deep links
         run: cp dist/el-gaon/browser/index.html dist/el-gaon/browser/404.html
