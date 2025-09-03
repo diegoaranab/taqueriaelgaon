@@ -9,4 +9,7 @@ import { RouterOutlet } from '@angular/router';
 })
 export class App {
   protected readonly title = signal('el-gaon');
+
+  // Expose the current year for footer binding (Angular templates should avoid `new`/side effects)
+  public readonly year = new Date().getFullYear();
 }
