@@ -17,24 +17,64 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run build
 
-      # Detect Angular output path:
-      # - If SSR/prerender outputs to dist/el-gaon (no browser/), use that
-      # - Otherwise use legacy dist/el-gaon/browser
-      - name: Resolve publish directory & add 404 fallback
+      # Resolve the real publish directory by locating an index file.
+      # Handles:
+      #  - dist/el-gaon/browser/index.html
+      #  - dist/el-gaon/index.html
+      #  - dist/**/index.csr.html (normalize to index.html)
+      - name: Resolve publish directory & add SPA 404
         shell: bash
         run: |
-          set -e
-          if [ -d dist/el-gaon/browser ]; then
-            echo "PUBLISH_DIR=dist/el-gaon/browser" >> "$GITHUB_ENV"
-            cp dist/el-gaon/browser/index.html dist/el-gaon/browser/404.html
-          elif [ -d dist/el-gaon ]; then
-            echo "PUBLISH_DIR=dist/el-gaon" >> "$GITHUB_ENV"
-            cp dist/el-gaon/index.html dist/el-gaon/404.html
-          else
-            echo "Build output not found"
-            ls -R dist || true
-            exit 1
+          set -euo pipefail
+          root="dist/el-gaon"
+
+          pick_index() {
+            local dir="$1"
+            if [[ -f "$dir/index.html" ]]; then
+              echo "$dir/index.html"
+              return 0
+            fi
+            if [[ -f "$dir/index.csr.html" ]]; then
+              cp "$dir/index.csr.html" "$dir/index.html"
+              echo "$dir/index.html"
+              return 0
+            fi
+            return 1
+          }
+
+          INDEX=""
+          if [[ -d "$root/browser" ]]; then
+            if INDEX=$(pick_index "$root/browser"); then
+              PUBLISH_DIR="$root/browser"
+            fi
           fi
+
+          if [[ -z "${INDEX:-}" ]] && [[ -d "$root" ]]; then
+            if INDEX=$(pick_index "$root"); then
+              PUBLISH_DIR="$root"
+            fi
+          fi
+
+          if [[ -z "${INDEX:-}" ]]; then
+            # Fallback: find any index(.csr).html under dist
+            cand=$(find dist -maxdepth 5 -type f \( -name index.html -o -name index.csr.html \) | head -n1 || true)
+            if [[ -z "$cand" ]]; then
+              echo "Build output not found. Dist tree:"
+              find dist -maxdepth 5 -print || true
+              exit 1
+            fi
+            PUBLISH_DIR="$(dirname "$cand")"
+            if [[ "${cand##*/}" == "index.csr.html" ]]; then
+              cp "$cand" "$PUBLISH_DIR/index.html"
+              INDEX="$PUBLISH_DIR/index.html"
+            else
+              INDEX="$cand"
+            fi
+          fi
+
+          echo "PUBLISH_DIR=$PUBLISH_DIR" >> "$GITHUB_ENV"
+          cp "$INDEX" "$PUBLISH_DIR/404.html"
+          echo "::notice::Publishing from $PUBLISH_DIR"
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
