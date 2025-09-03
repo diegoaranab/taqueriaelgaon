@@ -36,7 +36,7 @@ export class HeroVideoComponent implements AfterViewInit, OnDestroy {
   @Input() src: string = 'assets/video/hero_loop.mp4';
 
   /** Poster image shown on load and for reduced-motion users. */
-  @Input() poster: string = 'assets/images/hero/poster.svg';
+  @Input() poster: string = 'assets/images/hero/poster.jpg';
 
   @ViewChild('vid') vid?: ElementRef<HTMLVideoElement>;
   prefersReducedMotion = false;
