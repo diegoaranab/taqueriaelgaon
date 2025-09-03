@@ -14,9 +14,7 @@ import { DataService, Category, TacoItem } from '../../data/data.service';
       <button *ngFor="let c of categories()"
               (click)="activeId.set(c.id)"
               class="px-4 py-2 rounded-lg text-sm md:text-base"
-              [class.bg-gold]="activeId() === c.id"
-              [class.text-blackx]="activeId() === c.id"
-              [class.bg-white/10]="activeId() !== c.id">
+              [ngClass]="activeId() === c.id ? 'bg-gold text-blackx' : 'bg-white/10'">
         {{ c.label }}
       </button>
     </div>
@@ -75,4 +73,3 @@ export class MenuTabsComponent {
     return !!item?.prices && typeof item.prices.maiz === 'number';
   }
 }
-
