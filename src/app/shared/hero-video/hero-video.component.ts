@@ -38,70 +38,174 @@ import { CommonModule } from '@angular/common';
       <img [src]="poster" alt="Taquería El Ga’on" class="w-full h-[70dvh] object-cover" />
     </ng-template>
 
-    <!-- Slot for overlay content (e.g., CTA button) -->
     <ng-content></ng-content>
   </section>
   `,
 })
 export class HeroVideoComponent implements AfterViewInit, OnDestroy {
-  /** Path to the MP4 video. */
+  /** Base-href-friendly paths (GH Pages) — these files exist in public/assets/... */
   @Input() src: string = 'assets/video/hero_loop.mp4';
-
-  /** Poster image shown on load and for reduced-motion users. */
   @Input() poster: string = 'assets/images/hero/poster.jpg';
 
   @ViewChild('vid') vid?: ElementRef<HTMLVideoElement>;
+
   prefersReducedMotion = false;
   autoplayBlocked = false;
+  private firstPlayed = false;
   private observer?: IntersectionObserver;
+  private gestureHandlersBound = false;
 
   ngAfterViewInit(): void {
-    // Respect reduced motion (safe-guard for SSR if ever enabled)
-    if (typeof window !== 'undefined' && 'matchMedia' in window) {
-      this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.prefersReducedMotion = this.queryReducedMotion();
+    if (this.prefersReducedMotion) {
+      console.info('[hero] reduced-motion: showing poster only');
+      return;
     }
-    if (this.prefersReducedMotion) return;
 
     const v = this.vid?.nativeElement;
     if (!v) return;
 
-    // Make iOS Safari happy: set properties and attributes before attempting play
+    // Set props before attempting any playback (iOS/Chrome policies)
     v.muted = true;
+    (v as any).defaultMuted = true;
     (v as any).playsInline = true;
     v.setAttribute('playsinline', '');
     v.setAttribute('webkit-playsinline', '');
     v.preload = 'metadata';
 
-    const tryPlay = () => v.play().then(() => {
-      this.autoplayBlocked = false;
-    }).catch(() => {
-      // If blocked, show tap overlay
-      this.autoplayBlocked = true;
-    });
+    // Debug events
+    v.addEventListener('loadedmetadata', () => console.info('[hero] loadedmetadata'), { once: true });
+    v.addEventListener('canplay',       () => console.info('[hero] canplay'), { once: true });
+    v.addEventListener('playing',       () => console.info('[hero] playing'));
 
-    // Try immediately and once the media can play
-    tryPlay();
-    v.addEventListener('canplay', () => tryPlay(), { once: true });
+    const tryPlay = (label: string) => v.play()
+      .then(() => {
+        console.info('[hero] play() ok:', label);
+        this.autoplayBlocked = false;
+        this.onFirstPlay();
+      })
+      .catch(err => {
+        console.warn('[hero] play() blocked:', label, err?.name || err);
+        this.autoplayBlocked = true;
+        this.bindFirstUserGesture(); // last-resort recovery
+      });
 
-    // Pause when off-screen, play when on-screen (saves battery/data)
+    // Kick the pipeline, then attempt play — also retry on readiness
+    v.load();
+    setTimeout(() => tryPlay('initial'), 0);
+    v.addEventListener('loadedmetadata', () => tryPlay('loadedmetadata'));
+    v.addEventListener('canplay', () => tryPlay('canplay'));
+
+    // Pause/resume on tab visibility change
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.onVisibility, false);
+    }
+  }
+
+  private onFirstPlay() {
+    if (this.firstPlayed) return;
+    this.firstPlayed = true;
+
+    const v = this.vid?.nativeElement;
+    if (!v) return;
+
+    // Once playback works, manage battery/data with IO (don’t pause before first success)
     if (typeof window !== 'undefined' && 'IntersectionObserver' in window) {
       this.observer = new IntersectionObserver(([entry]) => {
-        if (!entry.isIntersecting) v.pause();
-        else if (v.paused) v.play().catch(() => { this.autoplayBlocked = true; });
-      }, { threshold: 0.1 });
+        if (!entry.isIntersecting) {
+          v.pause();
+        } else if (v.paused) {
+          v.play().catch(err => {
+            console.warn('[hero] IO resume blocked', err?.name || err);
+            this.autoplayBlocked = true;
+            this.bindFirstUserGesture();
+          });
+        }
+      }, { root: null, rootMargin: '25% 0px', threshold: 0.1 });
       this.observer.observe(v);
     }
   }
+
+  private bindFirstUserGesture() {
+    if (this.gestureHandlersBound) return;
+    this.gestureHandlersBound = true;
+
+    const resume = () => {
+      const v = this.vid?.nativeElement;
+      if (!v) return;
+      v.load(); // some engines need a fresh load before play
+      v.muted = true;
+      v.play().then(() => {
+        console.info('[hero] resumed after gesture');
+        this.autoplayBlocked = false;
+        this.onFirstPlay();
+        unbind();
+      }).catch(err => {
+        console.warn('[hero] gesture resume failed', err?.name || err);
+      });
+    };
+
+    const unbind = () => {
+      window.removeEventListener('pointerdown', onAny, { capture: true } as any);
+      window.removeEventListener('keydown', onAny, { capture: true } as any);
+      window.removeEventListener('touchstart', onAny, { capture: true } as any);
+      window.removeEventListener('wheel', onAny, { capture: true } as any);
+    };
+
+    const onAny = () => resume();
+
+    window.addEventListener('pointerdown', onAny, { once: true, capture: true } as any);
+    window.addEventListener('keydown', onAny,     { once: true, capture: true } as any);
+    window.addEventListener('touchstart', onAny,  { once: true, capture: true } as any);
+    window.addEventListener('wheel', onAny,       { once: true, capture: true } as any);
+  }
+
+  private onVisibility = () => {
+    const v = this.vid?.nativeElement;
+    if (!v) return;
+    if (document.hidden) {
+      v.pause();
+    } else if (!this.prefersReducedMotion && v.paused) {
+      v.play().then(() => {
+        console.info('[hero] resumed on visibility');
+        this.autoplayBlocked = false;
+      }).catch(err => {
+        console.warn('[hero] resume on visibility blocked', err?.name || err);
+        this.autoplayBlocked = true;
+        this.bindFirstUserGesture();
+      });
+    }
+  };
 
   tapToPlay(evt: Event) {
     evt.stopPropagation();
     const v = this.vid?.nativeElement;
     if (!v) return;
-    v.muted = true; // keep muted for autoplay policy
-    v.play().then(() => { this.autoplayBlocked = false; }).catch(() => { /* keep overlay */ });
+    v.load();
+    v.muted = true;
+    v.play().then(() => {
+      console.info('[hero] user tap → playing');
+      this.autoplayBlocked = false;
+      this.onFirstPlay();
+    }).catch(err => {
+      console.warn('[hero] user tap failed', err?.name || err);
+    });
   }
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.onVisibility, false);
+    }
+  }
+
+  private queryReducedMotion(): boolean {
+    try {
+      return typeof window !== 'undefined'
+        && 'matchMedia' in window
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch {
+      return false;
+    }
   }
 }
