@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataService, Business } from '../../data/data.service';
 import { AnalyticsService } from '../../core/analytics.service';
@@ -33,16 +33,22 @@ import { AnalyticsService } from '../../core/analytics.service';
 })
 export class BusinessCtaComponent {
   private data = inject(DataService);
-  protected biz = signal<Business | null>(null);
+  protected biz = this.data.businessSignal;
   protected waUrl = 'https://wa.me/';
   protected mapsUrl = 'https://maps.app.goo.gl/UxpdeZjwFthaKxne7';
 
   constructor(private analytics: AnalyticsService) {
-    this.data.business().subscribe(b => {
-      this.biz.set(b);
-      const pre = b.whatsapp?.prefill || 'Hola El Ga’on, quiero ordenar:';
-      this.waUrl = this.data.whatsappUrl(pre, b);
+    effect(() => {
+      const b = this.biz();
+      const pre = b?.whatsapp?.prefill || 'Hola El Ga’on, quiero ordenar:';
+      this.waUrl = this.whatsappUrl(pre, b);
     });
+  }
+
+  whatsappUrl(message: string, biz?: Business | null): string {
+    const num = biz?.whatsapp?.number?.replace(/[^\d]/g, '') ?? '';
+    const base = num ? `https://wa.me/${num}` : 'https://wa.me/';
+    return `${base}?text=${encodeURIComponent(message)}`;
   }
 
   onWhatsAppClick() {

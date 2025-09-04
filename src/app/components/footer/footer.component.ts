@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DataService } from '../../data/data.service';
+import { DataService, Business } from '../../data/data.service';
 
 @Component({
   standalone: true,
@@ -36,13 +36,15 @@ import { DataService } from '../../data/data.service';
       <div class="text-white mb-2 font-semibold">Síguenos</div>
       <ul class="space-y-2 text-white/80">
         <li *ngIf="b.instagram">
-          <a class="hover:underline" [href]="b.instagram" target="_blank" rel="noopener">Instagram</a>
+          <a class="hover:underline" [href]="resolveUrl(b.instagram)" target="_blank" rel="noopener">Instagram</a>
         </li>
         <li *ngIf="b.facebook">
-          <a class="hover:underline" [href]="b.facebook" target="_blank" rel="noopener">Facebook</a>
+          <a class="hover:underline" [href]="resolveUrl(b.facebook)" target="_blank" rel="noopener">Facebook</a>
         </li>
         <li *ngIf="b.whatsapp?.number">
-          <a class="hover:underline" [href]="'https://wa.me/' + b.whatsapp.number" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="hover:underline" [href]="whatsappUrl(b.whatsapp?.prefill || 'Hola El Ga’on, quiero ordenar.', b)" target="_blank" rel="noopener">
+            WhatsApp
+          </a>
         </li>
       </ul>
     </div>
@@ -58,4 +60,17 @@ export class FooterComponent {
   private data = inject(DataService);
   readonly year = new Date().getFullYear();
   biz = this.data.businessSignal;
+
+  /** Helpers to avoid double "https://..." when composing links */
+  resolveUrl(url?: string): string | undefined {
+    if (!url) return undefined;
+    if (/^https?:\/\//i.test(url)) return url;
+    return 'https://' + url.replace(/^https?:\/\//i, '');
+  }
+
+  whatsappUrl(message: string, biz?: Business): string {
+    const num = biz?.whatsapp?.number?.replace(/[^\d]/g, '') ?? '';
+    const base = num ? `https://wa.me/${num}` : 'https://wa.me/';
+    return `${base}?text=${encodeURIComponent(message)}`;
+  }
 }

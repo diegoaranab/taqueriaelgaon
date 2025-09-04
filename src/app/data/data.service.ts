@@ -1,4 +1,5 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, catchError, shareReplay } from 'rxjs';
 
@@ -20,7 +21,10 @@ export interface Promo {
   cta?: string;
   href?: string;
 }
-export interface PromosData { active: Promo[]; upcoming?: Promo[]; }
+export interface PromosData {
+  active: Promo[];
+  upcoming: Promo[];
+}
 
 export interface Business {
   name: string;
@@ -28,65 +32,66 @@ export interface Business {
   instagram?: string;
   facebook?: string;
   whatsapp?: { number?: string; prefill?: string };
-  hours?: Record<string,string>;
+  hours?: Record<string, string>;
 }
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private http = inject(HttpClient);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
-  /** Build relative URL so SSR and GH Pages both work. */
-  private url(file: string): string {
-    // No leading slash. Let <base href="/taqueriaelgaon/"> resolve it on the client.
+  /** Build relative URL so SSR and GH Pages both work (no leading slash). */
+  private url(file: 'menu.json' | 'promos.json' | 'business.json'): string {
     return `data/${file}`;
   }
 
-  /** Cached signals for quick access across components */
-  businessSignal = signal<Business | null>(null);
-
-  private _menu$?: Observable<MenuData>;
-  private _promos$?: Observable<PromosData>;
-  private _business$?: Observable<Business>;
-
-  constructor() {
-    // Warm business and keep a reactive copy in a signal for footer/CTA
-    this.business().subscribe(b => this.businessSignal.set(b));
-  }
-
   menu(): Observable<MenuData> {
-    this._menu$ ??= this.http.get<MenuData>(this.url('menu.json')).pipe(
+    if (!this.isBrowser) return of({ categories: [] });
+    return this.http.get<MenuData>(this.url('menu.json')).pipe(
       catchError(() => of({ categories: [] })),
       shareReplay(1)
     );
-    return this._menu$;
   }
 
   promos(): Observable<PromosData> {
-    this._promos$ ??= this.http.get<PromosData>(this.url('promos.json')).pipe(
+    if (!this.isBrowser) return of({ active: [], upcoming: [] });
+    return this.http.get<PromosData>(this.url('promos.json')).pipe(
       catchError(() => of({ active: [], upcoming: [] })),
       shareReplay(1)
     );
-    return this._promos$;
   }
 
-  business(): Observable<Business> {
-    this._business$ ??= this.http.get<Business>(this.url('business.json')).pipe(
-      catchError(() => of({ name: 'Taquería El Ga’on' } as Business)),
-      shareReplay(1)
-    );
-    return this._business$;
-  }
+  private readonly fallbackBusiness: Business = {
+    name: 'Taquería El Ga’on',
+    address: 'Tehuacán, Puebla',
+    hours: {
+      monday: '6pm – 1am',
+      tuesday: '6pm – 1am',
+      wednesday: '6pm – 1am',
+      thursday: '6pm – 1am',
+      friday: '6pm – 1am',
+      saturday: '6pm – 1am',
+      sunday: '6pm – 1am',
+    },
+  };
 
-  /** Helpers to avoid double "https://..." when composing links */
-  resolveUrl(url?: string): string | undefined {
-    if (!url) return undefined;
-    if (/^https?:\/\//i.test(url)) return url;
-    return 'https://' + url.replace(/^https?:\/\//i, '');
-  }
+  private business$ = (this.isBrowser
+    ? this.http.get<Business>(this.url('business.json'))
+    : of(this.fallbackBusiness)
+  ).pipe(
+    catchError(() => of(this.fallbackBusiness)),
+    shareReplay(1)
+  );
 
-  whatsappUrl(message: string, biz?: Business): string {
-    const num = biz?.whatsapp?.number?.replace(/[^\d]/g, '') ?? '';
-    const base = num ? `https://wa.me/${num}` : 'https://wa.me/';
-    return `${base}?text=${encodeURIComponent(message)}`;
+  /** Writable signal for convenient template access. */
+  readonly businessSignal = signal<Business | null>(null);
+
+  constructor() {
+    if (this.isBrowser) {
+      this.business$.subscribe((b) => this.businessSignal.set(b));
+    } else {
+      this.businessSignal.set(this.fallbackBusiness);
+    }
   }
 }

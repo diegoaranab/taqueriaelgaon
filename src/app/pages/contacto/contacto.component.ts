@@ -11,7 +11,7 @@ import { DataService, Business } from '../../data/data.service';
     <div class="mx-auto max-w-6xl px-4 py-10">
       <h1 class="text-3xl md:text-4xl font-display mb-6">Contacto</h1>
 
-      <ng-container *ngIf="biz as b">
+      <ng-container *ngIf="biz() as b">
         <div class="grid gap-6 md:grid-cols-2">
           <div class="space-y-3">
             <div class="text-white/80">Dirección</div>
@@ -62,14 +62,16 @@ import { DataService, Business } from '../../data/data.service';
 })
 export class ContactoComponent {
   private data = inject(DataService);
-  biz?: Business;
+  biz = this.data.businessSignal;
 
-  constructor() {
-    this.data.business().subscribe(b => this.biz = b);
+  wa(b: Business | null): string {
+    const pre = b?.whatsapp?.prefill || 'Hola El Ga’on, quiero ordenar:';
+    return this.whatsappUrl(pre, b);
   }
 
-  wa(b: Business | undefined): string {
-    const pre = b?.whatsapp?.prefill || 'Hola El Ga’on, quiero ordenar:';
-    return this.data.whatsappUrl(pre, b);
+  private whatsappUrl(message: string, biz?: Business | null): string {
+    const num = biz?.whatsapp?.number?.replace(/[^\d]/g, '') ?? '';
+    const base = num ? `https://wa.me/${num}` : 'https://wa.me/';
+    return `${base}?text=${encodeURIComponent(message)}`;
   }
 }
