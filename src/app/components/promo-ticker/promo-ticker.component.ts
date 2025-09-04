@@ -12,7 +12,10 @@ import { AnalyticsService } from '../../core/analytics.service';
     <div class="mx-auto max-w-6xl px-4 py-3" aria-live="polite">
       <div *ngIf="promo() as p" class="flex items-center gap-3">
         <span class="inline-block px-2 py-1 rounded bg-gold text-blackx text-xs font-semibold">PROMO</span>
-        <span class="text-sm md:text-base">{{ p.title }} <span *ngIf="p.body" class="text-white/70">— {{ p.body }}</span></span>
+        <span class="text-sm md:text-base">
+          {{ p.title }}
+          <span *ngIf="p.body" class="text-white/70">— {{ p.body }}</span>
+        </span>
         <a *ngIf="p.href" [href]="p.href" class="ml-auto text-vermillion hover:underline text-sm">{{ p.cta || 'Ver más' }}</a>
       </div>
     </div>
@@ -21,25 +24,27 @@ import { AnalyticsService } from '../../core/analytics.service';
 })
 export class PromoTickerComponent implements OnInit, OnDestroy {
   private data = inject(DataService);
-  protected list: Promo[] = [];
-  protected idx = 0;
-  protected promo = signal<Promo | null>(null);
-  private timer?: any;
-  private reduced = false;
-  private seen = new Set<string>();
+  private analytics = inject(AnalyticsService);
 
-  constructor(private analytics: AnalyticsService) {}
+  promo = signal<Promo | null>(null);
+  private list: Promo[] = [];
+  private idx = 0;
+  private timer: any;
 
   ngOnInit(): void {
-    if (typeof window !== 'undefined' && 'matchMedia' in window) {
-      this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    }
-    this.data.promos().subscribe(p => {
-      this.list = p.active || [];
+    this.data.promos().subscribe(d => {
+      this.list = d.active || [];
       this.idx = 0;
       this.update();
-      if (!this.reduced && this.list.length > 1) {
-        this.timer = setInterval(() => { this.idx = (this.idx + 1) % this.list.length; this.update(); }, 6500);
+
+      // Respect reduced motion: only rotate if not reduced
+      const prefersReduced = typeof window !== 'undefined' &&
+        window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      if (!prefersReduced && this.list.length > 1) {
+        this.timer = setInterval(() => {
+          this.idx = (this.idx + 1) % this.list.length;
+          this.update();
+        }, 6500);
       }
     });
   }
@@ -47,6 +52,8 @@ export class PromoTickerComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.timer) clearInterval(this.timer);
   }
+
+  private seen = new Set<string>();
 
   private update() {
     const currentPromo = this.list[this.idx] ?? null;
