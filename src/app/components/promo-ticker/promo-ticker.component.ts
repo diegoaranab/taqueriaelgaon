@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataService, Promo } from '../../data/data.service';
+import { AnalyticsService } from '../../core/analytics.service';
 
 @Component({
   standalone: true,
@@ -25,6 +26,9 @@ export class PromoTickerComponent implements OnInit, OnDestroy {
   protected promo = signal<Promo | null>(null);
   private timer?: any;
   private reduced = false;
+  private seen = new Set<string>();
+
+  constructor(private analytics: AnalyticsService) {}
 
   ngOnInit(): void {
     if (typeof window !== 'undefined' && 'matchMedia' in window) {
@@ -44,5 +48,13 @@ export class PromoTickerComponent implements OnInit, OnDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
-  private update() { this.promo.set(this.list[this.idx] ?? null); }
+  private update() {
+    const currentPromo = this.list[this.idx] ?? null;
+    this.promo.set(currentPromo);
+    const key = (currentPromo as any)?.id || currentPromo?.title || JSON.stringify(currentPromo);
+    if (key && !this.seen.has(key)) {
+      this.seen.add(key);
+      this.analytics.trackEvent('promo_seen', { id: key });
+    }
+  }
 }

@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { PromoTickerComponent } from '../../shared/promo-ticker/promo-ticker.component';
+import { PromoTickerComponent } from '../../components/promo-ticker/promo-ticker.component';
 
 @Component({
   standalone: true,

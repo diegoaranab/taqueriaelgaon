@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { DataService, Category, TacoItem } from '../../data/data.service';
+import { AnalyticsService } from '../../core/analytics.service';
 
 @Component({
   standalone: true,
@@ -12,7 +13,7 @@ import { DataService, Category, TacoItem } from '../../data/data.service';
 
     <div class="flex gap-2 overflow-x-auto pb-2 border-b border-white/10">
       <button *ngFor="let c of categories()"
-              (click)="activeId.set(c.id)"
+              (click)="selectTab(c.id)"
               class="px-4 py-2 rounded-lg text-sm md:text-base"
               [ngClass]="activeId() === c.id ? 'bg-gold text-blackx' : 'bg-white/10'">
         {{ c.label }}
@@ -55,7 +56,7 @@ export class MenuTabsComponent {
   protected categories = signal<Category[]>([]);
   protected activeId = signal<string>('tacos');
 
-  constructor() {
+  constructor(private analytics: AnalyticsService) {
     this.data.menu().subscribe(m => this.categories.set(m.categories));
     effect(() => {
       if (!this.categories().some(c => c.id === this.activeId())) {
@@ -63,6 +64,11 @@ export class MenuTabsComponent {
         if (first) this.activeId.set(first);
       }
     });
+  }
+
+  selectTab(id: string) {
+    this.activeId.set(id);
+    this.analytics.trackEvent('menu_tab_select', { tab: id });
   }
 
   protected activeCategory = computed(() =>
