@@ -1,19 +1,25 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { APP_BASE_HREF } from '@angular/common';
-import { Observable, of, catchError } from 'rxjs';
+import { Observable, of, catchError, shareReplay } from 'rxjs';
 
 export interface TacoItem { name: string; prices: { maiz: number; harina: number; con: number }; }
 export interface SimpleItem { name: string; price: number; }
 export interface Category {
-  id: 'tacos' | 'bebidas' | 'postres' | (string & {});
+  id: 'tacos' | 'combos' | 'bebidas' | 'postres' | (string & {});
   label: string;
   items: (TacoItem | SimpleItem)[];
   notes?: string;
 }
 export interface MenuData { categories: Category[]; }
 
-export interface Promo { title: string; body?: string; start?: string; end?: string; cta?: string; href?: string; }
+export interface Promo {
+  title: string;
+  body?: string;
+  start?: string;
+  end?: string;
+  cta?: string;
+  href?: string;
+}
 export interface PromosData { active: Promo[]; upcoming?: Promo[]; }
 
 export interface Business {
@@ -21,54 +27,61 @@ export interface Business {
   address?: string;
   instagram?: string;
   facebook?: string;
-  hours?: {
-    monday?: string;
-    tuesday?: string;
-    wednesday?: string;
-    thursday?: string;
-    friday?: string;
-    saturday?: string;
-    sunday?: string;
-  };
   whatsapp?: { number?: string; prefill?: string };
+  hours?: Record<string,string>;
 }
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private http = inject(HttpClient);
-  public businessSignal = signal<Business | null>(null);
-  private readonly baseHref: string = (inject(APP_BASE_HREF, { optional: true }) ?? '/').toString();
+
+  /** Build relative URL so SSR and GH Pages both work. */
+  private url(file: string): string {
+    // No leading slash. Let <base href="/taqueriaelgaon/"> resolve it on the client.
+    return `data/${file}`;
+  }
+
+  /** Cached signals for quick access across components */
+  businessSignal = signal<Business | null>(null);
+
+  private _menu$?: Observable<MenuData>;
+  private _promos$?: Observable<PromosData>;
+  private _business$?: Observable<Business>;
 
   constructor() {
+    // Warm business and keep a reactive copy in a signal for footer/CTA
     this.business().subscribe(b => this.businessSignal.set(b));
   }
 
-  /**
-   * Build a URL under the app's <base href>, e.g. '/taqueriaelgaon/data/...'
-   * Works in browser and during Angular prerender.
-   */
-  private url(file: string): string {
-    // SSR-safe: rely on Angular’s APP_BASE_HREF (set by baseHref in angular.json)
-    const ensureSlashEnd = (s: string) => s.endsWith('/') ? s : (s + '/');
-    return ensureSlashEnd(this.baseHref) + 'data/' + file;
-  }
-
   menu(): Observable<MenuData> {
-    return this.http.get<MenuData>(this.url('menu.json')).pipe(
-      catchError(() => of({ categories: [] }))
+    this._menu$ ??= this.http.get<MenuData>(this.url('menu.json')).pipe(
+      catchError(() => of({ categories: [] })),
+      shareReplay(1)
     );
+    return this._menu$;
   }
 
   promos(): Observable<PromosData> {
-    return this.http.get<PromosData>(this.url('promos.json')).pipe(
-      catchError(() => of({ active: [] }))
+    this._promos$ ??= this.http.get<PromosData>(this.url('promos.json')).pipe(
+      catchError(() => of({ active: [], upcoming: [] })),
+      shareReplay(1)
     );
+    return this._promos$;
   }
 
   business(): Observable<Business> {
-    return this.http.get<Business>(this.url('business.json')).pipe(
-      catchError(() => of({ name: 'Taquería El Ga’on' } as Business))
+    this._business$ ??= this.http.get<Business>(this.url('business.json')).pipe(
+      catchError(() => of({ name: 'Taquería El Ga’on' } as Business)),
+      shareReplay(1)
     );
+    return this._business$;
+  }
+
+  /** Helpers to avoid double "https://..." when composing links */
+  resolveUrl(url?: string): string | undefined {
+    if (!url) return undefined;
+    if (/^https?:\/\//i.test(url)) return url;
+    return 'https://' + url.replace(/^https?:\/\//i, '');
   }
 
   whatsappUrl(message: string, biz?: Business): string {
