@@ -13,7 +13,8 @@ import { AnalyticsService } from '../../core/analytics.service';
       <div class="grow">
         <h2 class="text-2xl font-display">¿Listo para ordenar?</h2>
         <p class="text-white/70" *ngIf="biz() as b">
-          <a [href]="mapsUrl" target="_blank" rel="noopener" (click)="onMapsClick()">{{ b.address }}</a>
+          <a [href]="mapsUrl" target="_blank" rel="noopener" (click)="onMapsClick()"
+             class="hover:text-gold transition-colors">{{ b.address }}</a>
         </p>
       </div>
       <div class="flex items-center gap-3">
