@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DOCUMENT } from '@angular/common';
 import { Observable, of, catchError } from 'rxjs';
@@ -21,6 +21,15 @@ export interface Business {
   address?: string;
   instagram?: string;
   facebook?: string;
+  hours?: {
+    monday?: string;
+    tuesday?: string;
+    wednesday?: string;
+    thursday?: string;
+    friday?: string;
+    saturday?: string;
+    sunday?: string;
+  };
   whatsapp?: { number?: string; prefill?: string };
 }
 
@@ -28,6 +37,11 @@ export interface Business {
 export class DataService {
   private http = inject(HttpClient);
   private doc = inject(DOCUMENT);
+  public businessSignal = signal<Business | null>(null);
+
+  constructor() {
+    this.business().subscribe(b => this.businessSignal.set(b));
+  }
 
   /**
    * Build a URL under the app's <base href>, e.g. '/taqueriaelgaon/data/...'

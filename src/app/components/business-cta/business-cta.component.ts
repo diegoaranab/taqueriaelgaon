@@ -22,9 +22,9 @@ import { AnalyticsService } from '../../core/analytics.service';
            class="px-5 py-3 rounded-lg bg-vermillion text-white font-semibold hover:opacity-90 transition">
           WhatsApp
         </a>
-        <a *ngIf="biz()?.instagram" [href]="'https://instagram.com/' + biz()?.instagram" target="_blank" rel="noopener"
+        <a *ngIf="biz()?.instagram" [attr.href]="biz()?.instagram" target="_blank" rel="noopener"
            class="text-white/80 hover:text-white">Instagram</a>
-        <a *ngIf="biz()?.facebook" [href]="'https://facebook.com/' + biz()?.facebook" target="_blank" rel="noopener"
+        <a *ngIf="biz()?.facebook" [attr.href]="biz()?.facebook" target="_blank" rel="noopener"
            class="text-white/80 hover:text-white">Facebook</a>
       </div>
     </div>

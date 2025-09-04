@@ -6,6 +6,14 @@
   "whatsapp": {
     "number": "2382489890",
     "prefill": "Hola El Ga’on, quiero ordenar: Gaonera x3 + Queso"
+  },
+  "hours": {
+    "monday": "6pm – 1am",
+    "tuesday": "6pm – 1am",
+    "wednesday": "6pm – 1am",
+    "thursday": "6pm – 1am",
+    "friday": "6pm – 1am",
+    "saturday": "6pm – 1am",
+    "sunday": "6pm – 1am"
   }
 }
-
