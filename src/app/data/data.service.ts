@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { DOCUMENT } from '@angular/common';
+import { APP_BASE_HREF } from '@angular/common';
 import { Observable, of, catchError } from 'rxjs';
 
 export interface TacoItem { name: string; prices: { maiz: number; harina: number; con: number }; }
@@ -36,8 +36,8 @@ export interface Business {
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private http = inject(HttpClient);
-  private doc = inject(DOCUMENT);
   public businessSignal = signal<Business | null>(null);
+  private readonly baseHref: string = (inject(APP_BASE_HREF, { optional: true }) ?? '/').toString();
 
   constructor() {
     this.business().subscribe(b => this.businessSignal.set(b));
@@ -48,12 +48,9 @@ export class DataService {
    * Works in browser and during Angular prerender.
    */
   private url(file: string): string {
-    // Build under the app's <base href>, e.g. '/taqueriaelgaon/data/...'
-    // Avoid WHATWG URL in SSR (prerender) to prevent NotYetImplemented errors.
-    const base = ((this.doc as Document).baseURI || '/').toString();
-
+    // SSR-safe: rely on Angular’s APP_BASE_HREF (set by baseHref in angular.json)
     const ensureSlashEnd = (s: string) => s.endsWith('/') ? s : (s + '/');
-    return ensureSlashEnd(base) + 'data/' + file;
+    return ensureSlashEnd(this.baseHref) + 'data/' + file;
   }
 
   menu(): Observable<MenuData> {
