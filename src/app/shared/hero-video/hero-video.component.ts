@@ -1,5 +1,5 @@
-import { AfterViewInit, Component, ElementRef, Input, OnDestroy, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AfterViewInit, Component, ElementRef, Inject, Input, OnDestroy, PLATFORM_ID, ViewChild } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 @Component({
   standalone: true,
@@ -56,54 +56,29 @@ export class HeroVideoComponent implements AfterViewInit, OnDestroy {
   private observer?: IntersectionObserver;
   private gestureHandlersBound = false;
 
-  ngAfterViewInit(): void {
-    const v = this.vid?.nativeElement;
-    if (!v) return;
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  private get isBrowser() { return isPlatformBrowser(this.platformId); }
 
-    // If not forcing autoplay, respect reduced motion
-    if (!this.forceAutoplay && this.queryReducedMotion()) {
-      console.info('[hero] reduced-motion honored (forceAutoplay=false) — poster only');
+  ngAfterViewInit(): void {
+    if (!this.isBrowser) {
+      // On the server: do nothing. Avoid touching the video element.
       return;
     }
+    const v = this.vid?.nativeElement as HTMLVideoElement | undefined;
+    if (!v) return;
 
-    // Set props before attempting any playback (iOS/Chrome policies)
-    v.muted = true;
-    (v as any).defaultMuted = true;
-    (v as any).playsInline = true;
-    v.setAttribute('playsinline', '');
-    v.setAttribute('webkit-playsinline', '');
-    v.preload = 'metadata';
+    // Reload if supported (some shims don’t implement .load)
+    try { (v as any).load?.(); } catch {}
 
-    // Debug hooks
-    v.addEventListener('loadedmetadata', () => console.info('[hero] loadedmetadata'), { once: true });
-    v.addEventListener('canplay',       () => console.info('[hero] canplay'),       { once: true });
-    v.addEventListener('playing',       () => console.info('[hero] playing'));
+    // Autoplay attempt with catch to avoid unhandled promise rejections
+    try { v.play?.().catch(() => {}); } catch {}
 
-    const tryPlay = (label: string) => v.play()
-      .then(() => {
-        console.info('[hero] play() ok:', label);
-        this.autoplayBlocked = false;
-        this.onFirstPlay();
-      })
-      .catch(err => {
-        console.warn('[hero] play() blocked:', label, err?.name || err);
-        this.autoplayBlocked = true;
-        this.bindFirstUserGesture(); // last-resort recovery
-      });
-
-    // Prime pipeline and attempt playback with retries
-    v.load();
-    setTimeout(() => tryPlay('initial'), 0);
-    v.addEventListener('loadedmetadata', () => tryPlay('loadedmetadata'));
-    v.addEventListener('canplay', () => tryPlay('canplay'));
-
-    // Pause/resume on tab visibility
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', this.onVisibility, false);
-    }
+    // Attach visibility handler in browser only
+    document.addEventListener('visibilitychange', this.onVisibility, false);
   }
 
   private onFirstPlay() {
+    if (!this.isBrowser) return;
     if (this.firstPlayed) return;
     this.firstPlayed = true;
 
@@ -116,7 +91,7 @@ export class HeroVideoComponent implements AfterViewInit, OnDestroy {
         if (!entry.isIntersecting) {
           v.pause();
         } else if (v.paused) {
-          v.play().catch(err => {
+          v.play?.().catch(err => {
             console.warn('[hero] IO resume blocked', err?.name || err);
             this.autoplayBlocked = true;
             this.bindFirstUserGesture();
@@ -128,22 +103,26 @@ export class HeroVideoComponent implements AfterViewInit, OnDestroy {
   }
 
   private bindFirstUserGesture() {
+    if (!this.isBrowser) return;
     if (this.gestureHandlersBound) return;
     this.gestureHandlersBound = true;
 
     const resume = () => {
       const v = this.vid?.nativeElement;
       if (!v) return;
-      v.load();
+      (v as any).load?.();
       v.muted = true;
-      v.play().then(() => {
-        console.info('[hero] resumed after gesture');
-        this.autoplayBlocked = false;
-        this.onFirstPlay();
-        unbind();
-      }).catch(err => {
-        console.warn('[hero] gesture resume failed', err?.name || err);
-      });
+      const p = v.play?.();
+      if (p) {
+        p.then(() => {
+          console.info('[hero] resumed after gesture');
+          this.autoplayBlocked = false;
+          this.onFirstPlay();
+          unbind();
+        }).catch(err => {
+          console.warn('[hero] gesture resume failed', err?.name || err);
+        });
+      }
     };
 
     const unbind = () => {
@@ -162,45 +141,54 @@ export class HeroVideoComponent implements AfterViewInit, OnDestroy {
   }
 
   private onVisibility = () => {
+    if (!this.isBrowser) return;
     const v = this.vid?.nativeElement;
     if (!v) return;
     if (document.hidden) {
       v.pause();
     } else if (v.paused) {
-      v.play().then(() => {
-        console.info('[hero] resumed on visibility');
-        this.autoplayBlocked = false;
-      }).catch(err => {
-        console.warn('[hero] resume on visibility blocked', err?.name || err);
-        this.autoplayBlocked = true;
-        this.bindFirstUserGesture();
-      });
+      const p = v.play?.();
+      if (p) {
+        p.then(() => {
+          console.info('[hero] resumed on visibility');
+          this.autoplayBlocked = false;
+        }).catch(err => {
+          console.warn('[hero] resume on visibility blocked', err?.name || err);
+          this.autoplayBlocked = true;
+          this.bindFirstUserGesture();
+        });
+      }
     }
   };
 
   tapToPlay(evt: Event) {
+    if (!this.isBrowser) return;
     evt.stopPropagation();
     const v = this.vid?.nativeElement;
     if (!v) return;
-    v.load();
+    (v as any).load?.();
     v.muted = true;
-    v.play().then(() => {
-      console.info('[hero] user tap → playing');
-      this.autoplayBlocked = false;
-      this.onFirstPlay();
-    }).catch(err => {
-      console.warn('[hero] user tap failed', err?.name || err);
-    });
+    const p = v.play?.();
+    if (p) {
+      p.then(() => {
+        console.info('[hero] user tap → playing');
+        this.autoplayBlocked = false;
+        this.onFirstPlay();
+      }).catch(err => {
+        console.warn('[hero] user tap failed', err?.name || err);
+      });
+    }
   }
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
-    if (typeof document !== 'undefined') {
+    if (this.isBrowser) {
       document.removeEventListener('visibilitychange', this.onVisibility, false);
     }
   }
 
   private queryReducedMotion(): boolean {
+    if (!this.isBrowser) return false;
     try {
       return typeof window !== 'undefined'
         && 'matchMedia' in window
