@@ -34,9 +34,12 @@ export class DataService {
    * Works in browser and during Angular prerender.
    */
   private url(file: string): string {
-    // baseURI is provided by platform-browser and platform-server
-    const base = (this.doc as Document).baseURI || '/';
-    return new URL(`data/${file}`, base).toString();
+    // Build under the app's <base href>, e.g. '/taqueriaelgaon/data/...'
+    // Avoid WHATWG URL in SSR (prerender) to prevent NotYetImplemented errors.
+    const base = ((this.doc as Document).baseURI || '/').toString();
+
+    const ensureSlashEnd = (s: string) => s.endsWith('/') ? s : (s + '/');
+    return ensureSlashEnd(base) + 'data/' + file;
   }
 
   menu(): Observable<MenuData> {
