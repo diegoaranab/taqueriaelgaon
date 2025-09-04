@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataService, Business } from '../../data/data.service';
+import { AnalyticsService } from '../../core/analytics.service';
 
 @Component({
   standalone: true,
@@ -11,10 +12,12 @@ import { DataService, Business } from '../../data/data.service';
     <div class="mx-auto max-w-6xl px-4 py-8 flex flex-col md:flex-row md:items-center gap-4">
       <div class="grow">
         <h2 class="text-2xl font-display">¿Listo para ordenar?</h2>
-        <p class="text-white/70" *ngIf="biz() as b">{{ b.address }}</p>
+        <p class="text-white/70" *ngIf="biz() as b">
+          <a [href]="mapsUrl" target="_blank" rel="noopener" (click)="onMapsClick()">{{ b.address }}</a>
+        </p>
       </div>
       <div class="flex items-center gap-3">
-        <a [href]="waUrl" target="_blank" rel="noopener"
+        <a [href]="waUrl" target="_blank" rel="noopener" (click)="onWhatsAppClick()"
            class="px-5 py-3 rounded-lg bg-vermillion text-white font-semibold hover:opacity-90 transition">
           WhatsApp
         </a>
@@ -31,12 +34,21 @@ export class BusinessCtaComponent {
   private data = inject(DataService);
   protected biz = signal<Business | null>(null);
   protected waUrl = 'https://wa.me/';
+  protected mapsUrl = 'https://maps.app.goo.gl/UxpdeZjwFthaKxne7';
 
-  constructor() {
+  constructor(private analytics: AnalyticsService) {
     this.data.business().subscribe(b => {
       this.biz.set(b);
       const pre = b.whatsapp?.prefill || 'Hola El Ga’on, quiero ordenar:';
       this.waUrl = this.data.whatsappUrl(pre, b);
     });
+  }
+
+  onWhatsAppClick() {
+    this.analytics.trackEvent('whatsapp_click', { location: 'footer_cta' });
+  }
+
+  onMapsClick() {
+    this.analytics.trackEvent('maps_click', { location: 'ubicacion_page' });
   }
 }
