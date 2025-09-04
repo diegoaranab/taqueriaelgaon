@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of, catchError, shareReplay } from 'rxjs';
 
 export interface TacoItem { name: string; prices: { maiz: number; harina: number; con: number }; }
-export interface SimpleItem { name: string; price: number; }
+export interface SimpleItem { name: string; price: number; desc?: string; }
 export interface Category {
   id: 'tacos' | 'combos' | 'bebidas' | 'postres' | (string & {});
   label: string;
