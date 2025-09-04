@@ -1,10 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { ConsentBannerComponent } from './components/consent-banner/consent-banner.component';
+import { FooterComponent } from './components/footer/footer.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ConsentBannerComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ConsentBannerComponent, FooterComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

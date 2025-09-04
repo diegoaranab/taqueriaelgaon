@@ -30,7 +30,7 @@ import { DataService, Business } from '../../data/data.service';
           <div class="space-y-3">
             <div class="text-white/80">Instagram</div>
             <div class="font-medium">
-              <a [href]="b.instagram || 'https://www.instagram.com/taqueria_el_gaon'"
+              <a [attr.href]="b.instagram || 'https://www.instagram.com/taqueria_el_gaon'"
                  target="_blank" rel="noopener"
                  class="hover:text-gold transition-colors">
                  @taqueria_el_gaon
@@ -41,7 +41,7 @@ import { DataService, Business } from '../../data/data.service';
           <div class="space-y-3">
             <div class="text-white/80">Facebook</div>
             <div class="font-medium">
-              <a [href]="b.facebook || 'https://www.facebook.com/p/Taquería-El-Gaon-61574898375073'"
+              <a [attr.href]="b.facebook || 'https://www.facebook.com/p/Taquería-El-Gaon-61574898375073'"
                  target="_blank" rel="noopener"
                  class="hover:text-gold transition-colors">
                  Taquería El Ga’on
