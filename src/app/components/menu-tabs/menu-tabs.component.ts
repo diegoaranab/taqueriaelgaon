@@ -13,6 +13,7 @@ import { AnalyticsService } from '../../core/analytics.service';
 
     <div class="flex gap-2 overflow-x-auto pb-2 border-b border-white/10">
       <button *ngFor="let c of categories()"
+              type="button"
               (click)="selectTab(c.id)"
               class="px-3 py-2 rounded-t border border-white/10 border-b-0"
               [class.bg-white]="c.id === activeId()"
@@ -28,7 +29,14 @@ import { AnalyticsService } from '../../core/analytics.service';
           <div *ngFor="let item of cat.items" class="flex items-start justify-between border-b border-black/10 pb-2">
             <div>
               <div class="font-semibold">{{ item.name }}</div>
-              <div class="text-sm text-black/70" *ngIf="!isTaco(item) && (item as any).desc">{{ (item as any).desc }}</div>
+
+              <!-- Safer two-step checks to avoid parser issues -->
+              <ng-container *ngIf="!isTaco(item)">
+                <div class="text-sm text-black/70" *ngIf="(item as any)?.desc">
+                  {{ (item as any)?.desc }}
+                </div>
+              </ng-container>
+
               <div class="flex gap-2 mt-1" *ngIf="isTaco(item)">
                 <span class="inline-block px-2 py-1 rounded bg-white/10">
                   Maíz {{ (item as TacoItem).prices.maiz | currency:'MXN':'symbol-narrow':'1.0-0' }}
@@ -41,13 +49,15 @@ import { AnalyticsService } from '../../core/analytics.service';
                 </span>
               </div>
             </div>
+
             <div *ngIf="!isTaco(item)" class="shrink-0">
               <span class="inline-block px-2 py-1 rounded bg-white/10">
-                {{ (item as any).price | currency:'MXN':'symbol-narrow':'1.0-0' }}
+                {{ (item as any)?.price | currency:'MXN':'symbol-narrow':'1.0-0' }}
               </span>
             </div>
           </div>
         </div>
+
         <div *ngIf="cat.notes" class="mt-3 text-xs text-black/60">{{ cat.notes }}</div>
       </ng-container>
     </div>
